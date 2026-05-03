@@ -1,0 +1,158 @@
+{
+  "source": "instagram",
+  "schema_version": 1,
+  "generated_from": "dataset_instagram-hashtag-scraper_2026-05-03_18-49-34-234.json",
+  "dedupe_strategy": "owner+caption-prefix grouped (carousel/repost aware)",
+  "top_keywords": [
+    {
+      "keyword": "outfit",
+      "influence_score": 46.615,
+      "post_count": 20,
+      "likes_sum": 25,
+      "comments_sum": 0,
+      "is_core_trend": false,
+      "visual_description": "becoming baddie athlete 🔥 [ChatGPT, reels, viral, trending, trendingnow, viral reels, viral video, trending post, trending now, trend, trend now, chatgpt prompt, prompt, baddie, baddie prompt, chatgpt, chatgpt baddie prompt, black dress prompt, trending prompt, trending ChatGPT p",
+      "sample_post_url": "https://www.instagram.com/p/DX4xcuYgqvg/"
+    },
+    {
+      "keyword": "ootd",
+      "influence_score": 43.897,
+      "post_count": 20,
+      "likes_sum": 12,
+      "comments_sum": 2,
+      "is_core_trend": false,
+      "visual_description": "📦 จัดส่งฟรีทั่วประเทศ 🚀 สัมผัสความนุ่มเด้งในทุกย่างก้าวตั้งแต่การวิ่งบนลู่ไปจนถึงการทำธุระด้วยรองเท้าวิ่ง Ultraboost จากอาดิดาสคู่นี้ มาพร้อมส่วนรับแรงกระแทก BOOST ที่เบาที่สุดเท่าที่เราเคยมีมา จึงช่วยส่งคืนพลังในทุกย่างก้าว ทั้งยังผสานรวมกับเทคโนโลยี Torsion System เพื่อความมั่น",
+      "sample_post_url": "https://www.instagram.com/p/DX4xpJNgYLr/"
+    },
+    {
+      "keyword": "fashion",
+      "influence_score": 38.753,
+      "post_count": 24,
+      "likes_sum": 5,
+      "comments_sum": 0,
+      "is_core_trend": false,
+      "visual_description": "am standing in my closet, trying to decide what to wear. Florida has its own dress code—linen, cotton, sandals, UPF hat, and absolutely nothing that feels too heavy or synthetic. But clothes are never just clothes anymore. Now everything is a “core.” But not fashions from the 196",
+      "sample_post_url": "https://www.instagram.com/p/DX4unuillmK/"
+    },
+    {
+      "keyword": "styleinspo",
+      "influence_score": 21.905,
+      "post_count": 3,
+      "likes_sum": 165,
+      "comments_sum": 13,
+      "is_core_trend": false,
+      "visual_description": "Serving summer looks for way less with my designer dupe sandals. Check out the amazon storefront link in bio for all my finds!",
+      "sample_post_url": "https://www.instagram.com/p/DX4xknklLBG/"
+    },
+    {
+      "keyword": "looks",
+      "influence_score": 20.655,
+      "post_count": 2,
+      "likes_sum": 165,
+      "comments_sum": 13,
+      "is_core_trend": false,
+      "visual_description": "Serving summer looks for way less with my designer dupe sandals. Check out the amazon storefront link in bio for all my finds!",
+      "sample_post_url": "https://www.instagram.com/p/DX4xknklLBG/"
+    },
+    {
+      "keyword": "go to looks",
+      "influence_score": 19.405,
+      "post_count": 1,
+      "likes_sum": 165,
+      "comments_sum": 13,
+      "is_core_trend": false,
+      "visual_description": "Was sind eure Go-to-Looks für diese Saison? ☺️",
+      "sample_post_url": "https://www.instagram.com/p/DX4sni0CLY-/"
+    },
+    {
+      "keyword": "style",
+      "influence_score": 17.59,
+      "post_count": 10,
+      "likes_sum": 3,
+      "comments_sum": 0,
+      "is_core_trend": false,
+      "visual_description": "am standing in my closet, trying to decide what to wear. Florida has its own dress code—linen, cotton, sandals, UPF hat, and absolutely nothing that feels too heavy or synthetic. But clothes are never just clothes anymore. Now everything is a “core.” But not fashions from the 196",
+      "sample_post_url": "https://www.instagram.com/p/DX4unuillmK/"
+    },
+    {
+      "keyword": "dress",
+      "influence_score": 11.596,
+      "post_count": 4,
+      "likes_sum": 2,
+      "comments_sum": 2,
+      "is_core_trend": false,
+      "visual_description": "am standing in my closet, trying to decide what to wear. Florida has its own dress code—linen, cotton, sandals, UPF hat, and absolutely nothing that feels too heavy or synthetic. But clothes are never just clothes anymore. Now everything is a “core.” But not fashions from the 196",
+      "sample_post_url": "https://www.instagram.com/p/DX4unuillmK/"
+    },
+    {
+      "keyword": "outfitinspiration",
+      "influence_score": 8.92,
+      "post_count": 3,
+      "likes_sum": 5,
+      "comments_sum": 0,
+      "is_core_trend": false,
+      "visual_description": "🌸✨𝐀 𝐂 𝐓 𝐔 𝐀 𝐋 𝐈 𝐙 𝐀 𝐂 𝐈 𝐎 𝐍✨🌸 2/2 📍Moctezuma 119, centro. 💳Paga con tu tarjeta favorita. 📲Paga con tu celular. 🛍️Aparta a 1 mes.",
+      "sample_post_url": "https://www.instagram.com/p/DX4xsrlj4pi/"
+    },
+    {
+      "keyword": "ootdfashion",
+      "influence_score": 8.285,
+      "post_count": 2,
+      "likes_sum": 2,
+      "comments_sum": 2,
+      "is_core_trend": false,
+      "visual_description": "Impossible de ne pas vous poster cette robe incroyable.",
+      "sample_post_url": "https://www.instagram.com/p/DX4xh9FjvlP/"
+    },
+    {
+      "keyword": "terracefashion",
+      "influence_score": 6.86,
+      "post_count": 1,
+      "likes_sum": 12,
+      "comments_sum": 0,
+      "is_core_trend": false,
+      "visual_description": "Unusual shoes situation 👞 . . Shirt: Dred Perry M3600 Shorts: Polar Big Boy Shoes: Clarks Wallabee Watch: Seiko SRPE33K1",
+      "sample_post_url": "https://www.instagram.com/p/DX4xbMhjWcZ/"
+    },
+    {
+      "keyword": "lifestyle",
+      "influence_score": 6.386,
+      "post_count": 4,
+      "likes_sum": 0,
+      "comments_sum": 0,
+      "is_core_trend": false,
+      "visual_description": "Magui via her ig story! II March 26, 2026 Long sleeve crew neck bodysuit- onyx ($70) TRF mid rise baggy balloon jeans- oyster white ($59) 5 MG leather luxe band- camel with gold frame ($178) - 📸: ‼️: I am NOT Magui nor am I affiliated with her/any brands affiliated with her. I am",
+      "sample_post_url": "https://www.instagram.com/p/DX4xq_QEQbO/"
+    },
+    {
+      "keyword": "outfitinspo",
+      "influence_score": 5.987,
+      "post_count": 3,
+      "likes_sum": 1,
+      "comments_sum": 0,
+      "is_core_trend": false,
+      "visual_description": "Rahat kombin ama özenli 1. Kahve tonlarıyla sıcak ve cozy 2. mor siyahla clean ve fresh Günlük hayatta hangisini seçerdin ? 😍",
+      "sample_post_url": "https://www.instagram.com/p/DX4xiDxDOB0/"
+    },
+    {
+      "keyword": "outfits",
+      "influence_score": 5.176,
+      "post_count": 3,
+      "likes_sum": -1,
+      "comments_sum": 1,
+      "is_core_trend": false,
+      "visual_description": "Matching in the pale lemon stripe plumeti. . . . . . . . . .",
+      "sample_post_url": "https://www.instagram.com/p/DX4xjHIDY6q/"
+    },
+    {
+      "keyword": "aesthetic",
+      "influence_score": 4.777,
+      "post_count": 2,
+      "likes_sum": 2,
+      "comments_sum": 0,
+      "is_core_trend": false,
+      "visual_description": "am standing in my closet, trying to decide what to wear. Florida has its own dress code—linen, cotton, sandals, UPF hat, and absolutely nothing that feels too heavy or synthetic. But clothes are never just clothes anymore. Now everything is a “core.” But not fashions from the 196",
+      "sample_post_url": "https://www.instagram.com/p/DX4unuillmK/"
+    }
+  ]
+}

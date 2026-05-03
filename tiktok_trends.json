@@ -1,0 +1,173 @@
+{
+  "source": "tiktok",
+  "schema_version": 1,
+  "high_view_threshold": 1900000,
+  "generated_from": "dataset_tiktok-scraper_2026-05-03_17-49-06-905.json",
+  "top_keywords": [
+    {
+      "keyword": "fashion",
+      "virality_score": 299.243,
+      "video_appearances": 108,
+      "high_view_appearances": 20,
+      "source_counts": {
+        "hashtag": 115,
+        "description": 131,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "fashiontiktok",
+      "virality_score": 223.359,
+      "video_appearances": 75,
+      "high_view_appearances": 18,
+      "source_counts": {
+        "hashtag": 87,
+        "description": 87,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "outfitinspo",
+      "virality_score": 132.735,
+      "video_appearances": 43,
+      "high_view_appearances": 10,
+      "source_counts": {
+        "hashtag": 54,
+        "description": 54,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "ootd",
+      "virality_score": 106.214,
+      "video_appearances": 36,
+      "high_view_appearances": 10,
+      "source_counts": {
+        "hashtag": 39,
+        "description": 39,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "outfit",
+      "virality_score": 104.593,
+      "video_appearances": 39,
+      "high_view_appearances": 10,
+      "source_counts": {
+        "hashtag": 23,
+        "description": 48,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "fashiontok",
+      "virality_score": 104.014,
+      "video_appearances": 37,
+      "high_view_appearances": 7,
+      "source_counts": {
+        "hashtag": 41,
+        "description": 41,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "style",
+      "virality_score": 90.236,
+      "video_appearances": 36,
+      "high_view_appearances": 6,
+      "source_counts": {
+        "hashtag": 20,
+        "description": 49,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "fashioninspo",
+      "virality_score": 69.725,
+      "video_appearances": 22,
+      "high_view_appearances": 4,
+      "source_counts": {
+        "hashtag": 33,
+        "description": 33,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "outfitideas",
+      "virality_score": 64.426,
+      "video_appearances": 20,
+      "high_view_appearances": 8,
+      "source_counts": {
+        "hashtag": 21,
+        "description": 21,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "styleinspo",
+      "virality_score": 56.045,
+      "video_appearances": 19,
+      "high_view_appearances": 5,
+      "source_counts": {
+        "hashtag": 20,
+        "description": 20,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "outfits",
+      "virality_score": 36.773,
+      "video_appearances": 17,
+      "high_view_appearances": 2,
+      "source_counts": {
+        "hashtag": 7,
+        "description": 19,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "streetstyle",
+      "virality_score": 35.405,
+      "video_appearances": 11,
+      "high_view_appearances": 3,
+      "source_counts": {
+        "hashtag": 15,
+        "description": 15,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "streetwear",
+      "virality_score": 31.018,
+      "video_appearances": 11,
+      "high_view_appearances": 2,
+      "source_counts": {
+        "hashtag": 13,
+        "description": 13,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "runway",
+      "virality_score": 25.763,
+      "video_appearances": 12,
+      "high_view_appearances": 0,
+      "source_counts": {
+        "hashtag": 4,
+        "description": 21,
+        "suggested_search": 0
+      }
+    },
+    {
+      "keyword": "look",
+      "virality_score": 18.716,
+      "video_appearances": 9,
+      "high_view_appearances": 1,
+      "source_counts": {
+        "hashtag": 0,
+        "description": 12,
+        "suggested_search": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "source": "pinterest",
+  "pinterest_aggregator_weight": 1.3,
+  "generated_at": "2026-05-03T20:51:26+00:00",
+  "input_file": "dataset_pinterest-scraper-search_2026-05-03_20-38-56-322.json",
+  "top_keywords": [
+    {
+      "keyword": "outfit ideas",
+      "longevity_score": 78.69,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 9,
+      "pin_mentions": 10,
+      "weighted_save_proxy": 5774
+    },
+    {
+      "keyword": "shirt",
+      "longevity_score": 100.0,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 30,
+      "pin_mentions": 38,
+      "weighted_save_proxy": 2924
+    },
+    {
+      "keyword": "streetwear",
+      "longevity_score": 100.0,
+      "source_aesthetic": "Streetwear",
+      "unique_boards": 21,
+      "pin_mentions": 31,
+      "weighted_save_proxy": 7115
+    },
+    {
+      "keyword": "cotton",
+      "longevity_score": 92.81,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 12,
+      "pin_mentions": 15,
+      "weighted_save_proxy": 573
+    },
+    {
+      "keyword": "relaxed",
+      "longevity_score": 89.11,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 11,
+      "pin_mentions": 11,
+      "weighted_save_proxy": 2199
+    },
+    {
+      "keyword": "polo",
+      "longevity_score": 88.53,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 11,
+      "pin_mentions": 16,
+      "weighted_save_proxy": 1310
+    },
+    {
+      "keyword": "vintage",
+      "longevity_score": 83.56,
+      "source_aesthetic": "Streetwear",
+      "unique_boards": 10,
+      "pin_mentions": 17,
+      "weighted_save_proxy": 2204
+    },
+    {
+      "keyword": "outfit inspo",
+      "longevity_score": 51.55,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 5,
+      "pin_mentions": 6,
+      "weighted_save_proxy": 2762
+    },
+    {
+      "keyword": "summer",
+      "longevity_score": 77.67,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 9,
+      "pin_mentions": 9,
+      "weighted_save_proxy": 3881
+    },
+    {
+      "keyword": "jeans",
+      "longevity_score": 77.3,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 9,
+      "pin_mentions": 9,
+      "weighted_save_proxy": 3287
+    },
+    {
+      "keyword": "relaxed fit",
+      "longevity_score": 48.25,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 5,
+      "pin_mentions": 5,
+      "weighted_save_proxy": 691
+    },
+    {
+      "keyword": "oversized",
+      "longevity_score": 73.66,
+      "source_aesthetic": "Streetwear",
+      "unique_boards": 9,
+      "pin_mentions": 10,
+      "weighted_save_proxy": 585
+    },
+    {
+      "keyword": "timeless",
+      "longevity_score": 70.2,
+      "source_aesthetic": "Editorial / General",
+      "unique_boards": 8,
+      "pin_mentions": 14,
+      "weighted_save_proxy": 1625
+    },
+    {
+      "keyword": "pants",
+      "longevity_score": 69.54,
+      "source_aesthetic": "Streetwear",
+      "unique_boards": 8,
+      "pin_mentions": 8,
+      "weighted_save_proxy": 1745
+    },
+    {
+      "keyword": "sneakers",
+      "longevity_score": 69.44,
+      "source_aesthetic": "Streetwear",
+      "unique_boards": 8,
+      "pin_mentions": 8,
+      "weighted_save_proxy": 1668
+    }
+  ]
+}

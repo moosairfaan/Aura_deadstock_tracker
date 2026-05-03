@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+.Python
+*.egg-info/
+.env
+.env.*
+!.env.example
+
+dashboard/node_modules/
+dashboard/dist/
+
+.DS_Store
+*.log
+
+# Too large for normal Git / GitHub (use release assets or DVC if needed)
+transactions_train.csv
