@@ -1,0 +1,36 @@
+# Python / local
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Heavy data (use slim CSV, remote storage, or build-time fetch)
+transactions_train.csv
+articles.csv
+dataset_*.json
+dataset_*/
+*.csv.bak
+
+# Node (dashboard is separate; if monorepo upload, exclude deps + build output)
+dashboard/node_modules/
+dashboard/dist/
+node_modules/
+
+# Git / IDE / OS
+.git/
+.DS_Store
+*.log
+.cursor/
+
+# Archives / misc
+*.zip
+*.tar.gz
+trends.js
