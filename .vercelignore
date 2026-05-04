@@ -1,36 +1,33 @@
-# Python / local
-.venv/
+# Keep the serverless upload tiny — data is loaded from ARTICLES_CSV_URL / OMNI_TRENDS_URL at runtime
 venv/
+.venv/
 __pycache__/
 *.py[cod]
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-
-# Secrets
+*.csv
+*.json
+!vercel.json
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico
+*.zip
+*.tar.gz
+*.log
 .env
 .env.*
 !.env.example
-
-# Heavy data (use slim CSV, remote storage, or build-time fetch)
-transactions_train.csv
-articles.csv
-dataset_*.json
-dataset_*/
-*.csv.bak
-
-# Node (dashboard is separate; if monorepo upload, exclude deps + build output)
-dashboard/node_modules/
-dashboard/dist/
-node_modules/
-
-# Git / IDE / OS
 .git/
 .DS_Store
-*.log
 .cursor/
-
-# Archives / misc
-*.zip
-*.tar.gz
-trends.js
+node_modules/
+dashboard/node_modules/
+dashboard/dist/
+.egg-info/
+.pytest_cache/
+.mypy_cache/
+transactions_train.csv
+dataset_*/
+articles*.csv.bak

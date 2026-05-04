@@ -1,14 +1,18 @@
 """
-Fashion articles API: rank products by semantic similarity to trending keywords.
+Fashion articles API — serverless-friendly: fetch CSV/JSON from URLs, TF-IDF similarity (no torch).
 """
 from __future__ import annotations
 
-import os
+import asyncio
+import io
 import json
-from urllib.parse import quote
-from contextlib import asynccontextmanager
+import logging
+import os
 from collections import Counter
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
+from urllib.parse import quote
 
 import httpx
 import numpy as np
@@ -16,17 +20,18 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import normalize
 
-# Default relative to this package; override with ARTICLES_CSV
+
+# Local fallbacks (Vercel: set ARTICLES_CSV_URL / OMNI_TRENDS_URL instead of bundling files)
 DEFAULT_CSV = Path(__file__).resolve().parent.parent / "articles.csv"
-DEFAULT_MODEL = os.getenv("SENTENCE_TRANSFORMER_MODEL", "all-MiniLM-L6-v2")
+OMNI_TRENDS_FALLBACK = Path(__file__).resolve().parent.parent / "omni_trends.json"
+APIFY_DATASET_FALLBACK = Path(__file__).resolve().parent.parent / "dataset_testing_2026-05-03_16-53-08-752.json"
+
 TOP_K = 10
-BATCH_SIZE = 256
 SERPER_TRENDS_URL = "https://google.serper.dev/trends"
 FASHION_SEED_KEYWORDS = ["Polka Dots", "Lace Skirt", "Jelly Flats", "Capris", "Brut Denim"]
-APIFY_DATASET_FALLBACK = Path(__file__).resolve().parent.parent / "dataset_testing_2026-05-03_16-53-08-752.json"
-OMNI_TRENDS_FALLBACK = Path(__file__).resolve().parent.parent / "omni_trends.json"
 FASHION_HINTS = (
     "fashion",
     "style",
@@ -144,14 +149,12 @@ def _apify_fallback_keywords() -> list[str]:
 
 
 def get_live_fashion_trends() -> list[str]:
-    """
-    Fetch live trends from Serper and return the top 3 seed keywords by rising percentage.
-
-    The function expects SERPER_API_KEY in environment variables or in a local .env file.
-    """
     api_key = os.getenv("SERPER_API_KEY") or _load_env_var_from_dotenv("SERPER_API_KEY")
     if not api_key:
-        return _apify_fallback_keywords()
+        try:
+            return _apify_fallback_keywords()
+        except (RuntimeError, OSError, json.JSONDecodeError, TypeError):
+            return FASHION_SEED_KEYWORDS[:3]
 
     payload = {"keywords": FASHION_SEED_KEYWORDS}
     headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
@@ -160,20 +163,32 @@ def get_live_fashion_trends() -> list[str]:
         response = httpx.post(SERPER_TRENDS_URL, headers=headers, json=payload, timeout=30.0)
         response.raise_for_status()
     except httpx.HTTPError:
-        return _apify_fallback_keywords()
+        try:
+            return _apify_fallback_keywords()
+        except (RuntimeError, OSError, json.JSONDecodeError, TypeError):
+            return FASHION_SEED_KEYWORDS[:3]
 
     try:
         data = response.json()
     except ValueError:
-        return _apify_fallback_keywords()
+        try:
+            return _apify_fallback_keywords()
+        except (RuntimeError, OSError, json.JSONDecodeError, TypeError):
+            return FASHION_SEED_KEYWORDS[:3]
 
     keyword_scores: dict[str, float] = {}
     if not isinstance(data, dict):
-        return _apify_fallback_keywords()
+        try:
+            return _apify_fallback_keywords()
+        except (RuntimeError, OSError, json.JSONDecodeError, TypeError):
+            return FASHION_SEED_KEYWORDS[:3]
 
     trends = data.get("trends")
     if not isinstance(trends, list):
-        return _apify_fallback_keywords()
+        try:
+            return _apify_fallback_keywords()
+        except (RuntimeError, OSError, json.JSONDecodeError, TypeError):
+            return FASHION_SEED_KEYWORDS[:3]
 
     for trend in trends:
         if not isinstance(trend, dict):
@@ -208,7 +223,10 @@ def get_live_fashion_trends() -> list[str]:
             keyword_scores[keyword] = max(rising_values)
 
     if not keyword_scores:
-        return _apify_fallback_keywords()
+        try:
+            return _apify_fallback_keywords()
+        except (RuntimeError, OSError, json.JSONDecodeError, TypeError):
+            return FASHION_SEED_KEYWORDS[:3]
 
     ranked = sorted(keyword_scores.items(), key=lambda kv: kv[1], reverse=True)
     return [keyword for keyword, _ in ranked[:3]]
@@ -245,7 +263,7 @@ class ProductMatch(BaseModel):
     prod_name: str
     product_type_name: str | None = None
     detail_desc: str | None = None
-    similarity: float = Field(..., description="Cosine similarity to the keyword query embedding [0, 1]")
+    similarity: float = Field(..., description="Cosine similarity (TF-IDF) in [0, 1]")
 
 
 class RelevantProductsResponse(BaseModel):
@@ -255,29 +273,33 @@ class RelevantProductsResponse(BaseModel):
 
 class AppState:
     def __init__(self) -> None:
-        self.model: SentenceTransformer | None = None
+        self.vectorizer: TfidfVectorizer | None = None
+        self.doc_vectors: Any = None  # L2-normalized sparse CSR (n_docs × vocab)
         self.article_ids: list[str] = []
         self.records: list[dict] = []
-        self.embeddings: np.ndarray | None = None
         self.trend_keywords: list[str] = []
         self.trend_merged_norm: np.ndarray | None = None
-        self.trend_embeddings: np.ndarray | None = None
+        self.trend_vectors: Any = None  # sparse CSR (n_trends × vocab), row L2-normalized
+        self.omni_raw: dict | None = None
+        self.bootstrap_error: str | None = None
 
 
 state = AppState()
 
 
-def _load_omni_trends_for_embeddings(model: SentenceTransformer) -> tuple[list[str], np.ndarray | None, np.ndarray | None]:
-    path = Path(os.getenv("OMNI_TRENDS_PATH", str(OMNI_TRENDS_FALLBACK)))
-    if not path.is_file():
-        return [], None, None
+def _tfidf_max_features() -> int:
+    raw = os.getenv("TFIDF_MAX_FEATURES", "50000").strip()
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return [], None, None
-    items = payload.get("top_keywords") if isinstance(payload, dict) else None
+        n = int(raw)
+        return max(1000, min(n, 200_000))
+    except ValueError:
+        return 50_000
+
+
+def _omni_keywords_and_scores(payload: dict) -> tuple[list[str], np.ndarray | None]:
+    items = payload.get("top_keywords")
     if not isinstance(items, list) or not items:
-        return [], None, None
+        return [], None
     keywords: list[str] = []
     merged_raw: list[float] = []
     for it in items:
@@ -292,27 +314,27 @@ def _load_omni_trends_for_embeddings(model: SentenceTransformer) -> tuple[list[s
         except (TypeError, ValueError):
             merged_raw.append(0.0)
     if not keywords:
-        return [], None, None
+        return [], None
     merged = np.array(merged_raw, dtype=np.float64)
     if merged.size > 1 and float(merged.max()) > float(merged.min()):
         merged_norm = (merged - merged.min()) / (merged.max() - merged.min())
     else:
         merged_norm = np.ones_like(merged, dtype=np.float64)
+    return keywords, merged_norm.astype(np.float32)
+
+
+def _trend_vectors_from_omni(vectorizer: TfidfVectorizer, payload: dict) -> tuple[list[str], np.ndarray | None, Any]:
+    keywords, merged_norm = _omni_keywords_and_scores(payload)
+    if not keywords or merged_norm is None:
+        return [], None, None
     texts = [f"fashion trend: {k}" for k in keywords]
-    trend_emb = model.encode(texts, convert_to_numpy=True, show_progress_bar=False).astype(np.float32)
-    tn = np.linalg.norm(trend_emb, axis=1, keepdims=True)
-    tn = np.where(tn == 0, 1.0, tn)
-    trend_emb = trend_emb / tn
-    return keywords, merged_norm.astype(np.float32), trend_emb
+    raw = vectorizer.transform(texts)
+    tv = normalize(raw, norm="l2", axis=1)
+    return keywords, merged_norm, tv
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    csv_path = Path(os.getenv("ARTICLES_CSV", str(DEFAULT_CSV)))
-    if not csv_path.is_file():
-        raise RuntimeError(f"articles CSV not found: {csv_path}")
-
-    df = pd.read_csv(csv_path, dtype=str, low_memory=False)
+def _fit_catalog_and_trends(csv_text: str, omni_payload: dict | None) -> None:
+    df = pd.read_csv(io.StringIO(csv_text), dtype=str, low_memory=False)
     if "detail_desc" not in df.columns:
         raise RuntimeError("CSV must include a detail_desc column")
 
@@ -337,56 +359,130 @@ async def lifespan(app: FastAPI):
             }
         )
 
-    model = SentenceTransformer(DEFAULT_MODEL)
-    emb_chunks: list[np.ndarray] = []
-    for i in range(0, len(descriptions), BATCH_SIZE):
-        batch = descriptions[i : i + BATCH_SIZE]
-        emb_chunks.append(model.encode(batch, convert_to_numpy=True, show_progress_bar=True))
-    embeddings = np.vstack(emb_chunks).astype(np.float32)
-    # L2-normalize for cosine similarity via dot product
-    norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
-    norms = np.where(norms == 0, 1.0, norms)
-    embeddings = embeddings / norms
+    if not descriptions:
+        raise RuntimeError("No rows with article_id found in CSV")
 
-    trend_keywords, trend_merged_norm, trend_embeddings = _load_omni_trends_for_embeddings(model)
-    if trend_merged_norm is None or trend_embeddings is None:
-        trend_keywords = []
-        trend_merged_norm = None
-        trend_embeddings = None
+    vectorizer = TfidfVectorizer(
+        max_df=0.95,
+        min_df=1,
+        max_features=_tfidf_max_features(),
+        ngram_range=(1, 2),
+    )
+    doc_matrix = vectorizer.fit_transform(descriptions)
+    doc_vectors = normalize(doc_matrix, norm="l2", axis=1)
 
-    state.model = model
+    trend_keywords: list[str] = []
+    trend_merged_norm: np.ndarray | None = None
+    trend_vectors: Any = None
+    if isinstance(omni_payload, dict):
+        trend_keywords, trend_merged_norm, trend_vectors = _trend_vectors_from_omni(vectorizer, omni_payload)
+        if trend_merged_norm is None or trend_vectors is None:
+            trend_keywords = []
+            trend_merged_norm = None
+            trend_vectors = None
+
+    state.vectorizer = vectorizer
+    state.doc_vectors = doc_vectors
     state.article_ids = article_ids
     state.records = records
-    state.embeddings = embeddings
     state.trend_keywords = trend_keywords
     state.trend_merged_norm = trend_merged_norm
-    state.trend_embeddings = trend_embeddings
+    state.trend_vectors = trend_vectors
+    state.omni_raw = omni_payload if isinstance(omni_payload, dict) else None
 
-    yield
 
-    state.model = None
-    state.embeddings = None
+async def _http_get_text(client: httpx.AsyncClient, url: str) -> str:
+    r = await client.get(url, follow_redirects=True, timeout=httpx.Timeout(300.0, connect=30.0))
+    r.raise_for_status()
+    return r.text
+
+
+async def _resolve_articles_csv_text(client: httpx.AsyncClient) -> str:
+    url = os.getenv("ARTICLES_CSV_URL", "").strip()
+    if url:
+        return await _http_get_text(client, url)
+    path = Path(os.getenv("ARTICLES_CSV", str(DEFAULT_CSV)))
+    if not path.is_file():
+        raise RuntimeError(
+            "No articles data: set ARTICLES_CSV_URL (HTTPS) for Vercel, or ARTICLES_CSV / local articles.csv for dev."
+        )
+
+    def _read() -> str:
+        return path.read_text(encoding="utf-8")
+
+    return await asyncio.to_thread(_read)
+
+
+async def _resolve_omni_payload(client: httpx.AsyncClient) -> dict | None:
+    url = os.getenv("OMNI_TRENDS_URL", "").strip()
+    if url:
+        text = await _http_get_text(client, url)
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"OMNI_TRENDS_URL returned invalid JSON: {e}") from e
+        return data if isinstance(data, dict) else None
+
+    path = Path(os.getenv("OMNI_TRENDS_PATH", str(OMNI_TRENDS_FALLBACK)))
+    if not path.is_file():
+        return None
+
+    def _read() -> dict | None:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        return data if isinstance(data, dict) else None
+
+    return await asyncio.to_thread(_read)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    state.bootstrap_error = None
+    state.vectorizer = None
+    state.doc_vectors = None
     state.records = []
     state.article_ids = []
     state.trend_keywords = []
     state.trend_merged_norm = None
-    state.trend_embeddings = None
+    state.trend_vectors = None
+    state.omni_raw = None
+    try:
+        async with httpx.AsyncClient() as client:
+            csv_text = await _resolve_articles_csv_text(client)
+            omni_payload = await _resolve_omni_payload(client)
+        await asyncio.to_thread(_fit_catalog_and_trends, csv_text, omni_payload)
+    except Exception as exc:
+        logging.exception("Startup catalog / TF-IDF bootstrap failed")
+        state.bootstrap_error = f"{type(exc).__name__}: {exc}"
+    yield
+    state.vectorizer = None
+    state.doc_vectors = None
+    state.records = []
+    state.article_ids = []
+    state.trend_keywords = []
+    state.trend_merged_norm = None
+    state.trend_vectors = None
+    state.omni_raw = None
+    state.bootstrap_error = None
 
 
 app = FastAPI(title="Fashion relevance API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+def root() -> dict[str, str]:
+    """Base URL — must live on this `app` instance (not an earlier discarded FastAPI())."""
+    return {"status": "Aura is online", "health": "/health", "viability": "POST /api/viability"}
 
 
 class ViabilityRequest(BaseModel):
@@ -426,14 +522,10 @@ class ViabilityResponse(BaseModel):
 def _dominant_trend_source(keyword: str | None) -> str | None:
     if not keyword:
         return None
-    path = Path(os.getenv("OMNI_TRENDS_PATH", str(OMNI_TRENDS_FALLBACK)))
-    if not path.is_file():
+    payload = state.omni_raw
+    if not isinstance(payload, dict):
         return None
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return None
-    items = payload.get("top_keywords") if isinstance(payload, dict) else None
+    items = payload.get("top_keywords")
     if not isinstance(items, list):
         return None
     key_lower = keyword.strip().lower()
@@ -451,14 +543,15 @@ def _dominant_trend_source(keyword: str | None) -> str | None:
 
 
 def _dominant_trend_keyword_for_product_idx(idx: int) -> str | None:
-    if state.trend_embeddings is None or state.trend_merged_norm is None or state.embeddings is None:
+    if state.trend_vectors is None or state.trend_merged_norm is None or state.doc_vectors is None:
         return None
-    te = state.trend_embeddings
+    te = state.trend_vectors
     tn = state.trend_merged_norm
-    if te.shape[0] != tn.shape[0] or idx < 0 or idx >= state.embeddings.shape[0]:
+    n_docs = state.doc_vectors.shape[0]
+    if te.shape[0] != tn.shape[0] or idx < 0 or idx >= n_docs:
         return None
-    p = state.embeddings[idx]
-    cos_t = te @ p
+    p = state.doc_vectors[idx]
+    cos_t = (te @ p.T).toarray().ravel()
     weighted = cos_t * (0.35 + 0.65 * tn)
     best_i = int(np.argmax(weighted))
     if best_i < len(state.trend_keywords):
@@ -477,10 +570,16 @@ def _product_shop_url(article_id: str, product_code: str, prod_name: str) -> str
     )
 
 
-def _matched_products_for_query(q: np.ndarray, limit: int = 3) -> list[MatchedProduct]:
-    if state.embeddings is None:
+def _query_vector(concept: str) -> Any:
+    assert state.vectorizer is not None
+    raw = state.vectorizer.transform([concept])
+    return normalize(raw, norm="l2", axis=1)
+
+
+def _matched_products_for_query(q_vec: Any, limit: int = 3) -> list[MatchedProduct]:
+    if state.doc_vectors is None:
         return []
-    sims = state.embeddings @ q
+    sims = (state.doc_vectors @ q_vec.T).toarray().ravel()
     order = np.argsort(-sims)
     seen: set[str] = set()
     out: list[MatchedProduct] = []
@@ -529,16 +628,15 @@ def _viability_verdict(demand: float, saturation: float) -> str:
 
 @app.post("/api/viability", response_model=ViabilityResponse)
 def production_viability(body: ViabilityRequest) -> ViabilityResponse:
-    if state.model is None or state.embeddings is None:
+    if state.bootstrap_error:
+        raise HTTPException(status_code=503, detail=f"Service warming up: {state.bootstrap_error}")
+    if state.vectorizer is None or state.doc_vectors is None:
         raise HTTPException(status_code=503, detail="Model not ready")
 
     concept = body.concept.strip()
-    q = state.model.encode([concept], convert_to_numpy=True)[0].astype(np.float32)
-    qn = float(np.linalg.norm(q))
-    if qn > 0:
-        q = q / qn
+    q_vec = _query_vector(concept)
 
-    trend_emb = state.trend_embeddings
+    trend_emb = state.trend_vectors
     trend_norm = state.trend_merged_norm
     trend_kws = state.trend_keywords
 
@@ -548,7 +646,7 @@ def production_viability(body: ViabilityRequest) -> ViabilityResponse:
         and trend_norm is not None
         and trend_norm.shape[0] == trend_emb.shape[0]
     ):
-        cos_t = trend_emb @ q
+        cos_t = (trend_emb @ q_vec.T).toarray().ravel()
         weighted = cos_t * (0.35 + 0.65 * trend_norm)
         best_i = int(np.argmax(weighted))
         demand_score = float(np.clip(float(np.max(weighted)) * 100.0, 0.0, 100.0))
@@ -559,7 +657,7 @@ def production_viability(body: ViabilityRequest) -> ViabilityResponse:
         top_trend = None
         top_cos = None
 
-    sims = state.embeddings @ q
+    sims = (state.doc_vectors @ q_vec.T).toarray().ravel()
     n = int(sims.shape[0])
     _sim_raw = os.getenv("VIABILITY_SIM_THRESHOLD", "0.52").strip()
     try:
@@ -617,11 +715,11 @@ def production_viability(body: ViabilityRequest) -> ViabilityResponse:
         )
     else:
         market_reasoning = (
-            "Weak trend match in omni_trends.json and few close catalog neighbors—treat as unproven until you "
+            "Weak trend match in omni trends and few close catalog neighbors—treat as unproven until you "
             "refresh trend data or refine the concept."
         )
 
-    matched_products = _matched_products_for_query(q, limit=3)
+    matched_products = _matched_products_for_query(q_vec, limit=3)
 
     return ViabilityResponse(
         verdict=verdict,
@@ -660,6 +758,10 @@ async def fetch_trending_keywords(client: httpx.AsyncClient) -> list[str]:
 
 @app.get("/health")
 def health() -> dict[str, str]:
+    if state.bootstrap_error:
+        return {"status": "error", "detail": state.bootstrap_error[:500]}
+    if state.vectorizer is None or state.doc_vectors is None:
+        return {"status": "loading"}
     return {"status": "ok"}
 
 
@@ -670,11 +772,9 @@ async def relevant_products(
         description="Comma-separated keywords (overrides trending API when provided)",
     ),
 ) -> RelevantProductsResponse:
-    """
-    Embeds trending keywords (from Serper trends or TRENDING_KEYWORDS_URL) or the `keywords` query param,
-    compares to precomputed product-description embeddings, returns top 10 products by cosine similarity.
-    """
-    if state.model is None or state.embeddings is None:
+    if state.bootstrap_error:
+        raise HTTPException(status_code=503, detail=f"Service warming up: {state.bootstrap_error}")
+    if state.vectorizer is None or state.doc_vectors is None:
         raise HTTPException(status_code=503, detail="Model not ready")
 
     if keywords is not None and keywords.strip():
@@ -682,30 +782,12 @@ async def relevant_products(
         if not kw_list:
             raise HTTPException(status_code=400, detail="keywords query param is empty")
     else:
-        try:
-            # Primary source: Serper trends using .env key and seed keywords.
-            kw_list = get_live_fashion_trends()
-        except RuntimeError as serper_err:
-            # Fallback to existing external keyword API if configured.
-            async with httpx.AsyncClient() as client:
-                try:
-                    kw_list = await fetch_trending_keywords(client)
-                except HTTPException as fallback_err:
-                    raise HTTPException(
-                        status_code=502,
-                        detail=(
-                            f"Serper trends failed ({serper_err}). "
-                            f"Fallback API also failed ({fallback_err.detail})."
-                        ),
-                    ) from fallback_err
+        kw_list = get_live_fashion_trends()
 
     query_text = " ".join(kw_list)
-    query_emb = state.model.encode([query_text], convert_to_numpy=True)[0].astype(np.float32)
-    qn = np.linalg.norm(query_emb)
-    if qn > 0:
-        query_emb = query_emb / qn
+    q_vec = _query_vector(query_text)
 
-    sims = state.embeddings @ query_emb
+    sims = (state.doc_vectors @ q_vec.T).toarray().ravel()
     n = int(sims.shape[0])
     take = min(TOP_K, n)
     if take == 0:

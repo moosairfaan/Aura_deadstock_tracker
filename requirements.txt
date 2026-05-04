@@ -1,14 +1,8 @@
-# Fashion relevance API — app/main.py (FastAPI + embeddings)
-
+# Vercel / serverless — slim stack (no torch, tensorflow, transformers)
 fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
+uvicorn>=0.32.0
 pydantic>=2.0,<3
-
-# Embeddings & numerics
-sentence-transformers>=3.0.0
-torch>=2.0.0
-numpy>=1.26.0
-pandas>=2.0.0
-
-# Outbound HTTP (Serper, trending keyword URLs, etc.)
+numpy>=1.26.0,<3
+pandas>=2.0.0,<3
+scikit-learn>=1.3.0
 httpx>=0.27.0

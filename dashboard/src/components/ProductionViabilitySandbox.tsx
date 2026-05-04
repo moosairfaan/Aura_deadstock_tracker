@@ -3,6 +3,12 @@ import { seasonById, seasonalFitLabel, type SeasonDefinition, type SeasonId } fr
 import { SeasonalDiscoveryBar } from "./SeasonalDiscoveryBar";
 import { TrendSourceIcons } from "./TrendSourceIcons";
 
+/** Production: set `VITE_API_URL` (e.g. `https://your-api.railway.app`). Dev: Vite proxy → FastAPI on :8000. */
+function viabilityApiUrl(): string {
+  const base = (import.meta.env.VITE_API_URL as string | undefined)?.trim().replace(/\/$/, "");
+  return base ? `${base}/api/viability` : "/api/viability";
+}
+
 type MatchedProduct = {
   article_id: string;
   product_code: string;
@@ -87,7 +93,7 @@ export function ProductionViabilitySandbox() {
     setLoading(true);
     setSeasonRunId(fromSeason);
     try {
-      const res = await fetch("/api/viability", {
+      const res = await fetch(viabilityApiUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ concept: trimmed }),
